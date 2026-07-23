@@ -7,23 +7,27 @@ from bs4 import BeautifulSoup
 # Сколько максимально мест проверяем
 max_pos = 180 
 
-# По какому ключу ищем
-key_target = "Мечники"
+# По каким ключам мы ищем
+keys = [
+    "Мечники",
+    "Стрелялки",
+    "Пол это лава"
+]
 
 # Какое приложение ищем 
-app_target = "com.elezthem.StickWar"
+app_target = "com.autoverse.floorislava"
 
 
-def make_request(page_num):
+def make_request(page_num, key):
 
     headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
     }
     params = {
-    "query": "Мечники"
+        "query": key
     }
     
-    response = requests.get(url=f"""https://www.rustore.ru/catalog/search/page-{page_num}""", headers=headers, params=params)
+    response = requests.get(url=f"""https://www.rustore.ru/catalog/search/page-{page_num}""", headers=headers, params=params, timeout=10)
 
     if response.status_code != 200:
         return None
@@ -44,41 +48,43 @@ def receive_aps_list(r):
 
 
 
-def search_target_app():
+def search_target_app(keys):
 
     n = math.ceil(max_pos / 36) # Сколько страниц нужно проверить
-    code = 0
-    pos = 0
 
-    for i in range(n): 
-        response = make_request(i+1)
-        app_names = receive_aps_list(response)
+    for key in keys:
 
-        if app_names == None:
-            code = 3
-            break
+        code = 0
+        pos = 0
 
-        if app_names == []:
-            code = 2
-            break
+        for i in range(1, n+1): 
+            response = make_request(i, key)
+            app_names = receive_aps_list(response)
 
-        if app_target in app_names:
-            code = 1
-            pos = app_names.index(app_target) + 1 + (i*36)
-            break
+            if app_names == None:
+                code = 3
+                break
 
-        time.sleep(random.randint(2,5)) # Случайная задержка между запросами
+            if app_names == []:
+                code = 2
+                break
+
+            if app_target in app_names:
+                code = 1
+                pos = app_names.index(app_target) + 1 + (i-1)*36
+                break
+
+            time.sleep(random.randint(10,17)) # Случайная задержка между запросами
+
+        if code == 0:
+            print(f"""Из {max_pos} приложений твоего по ключу -{key}- нет, лошок""")
+        elif code == 1:
+            print(f"""По ключу -{key}- место {pos}, страница {i}""")
+        elif code == 2:
+            print(f"""Тебя собаку забанили на ключе -{key}- {i} странице""")
+        elif code == 3:
+            print(f"Какая-то ошибка с запросом на ключе {key}")
 
 
 
-
-    if code == 0:
-        return print(f"""Из {max_pos} приложений твоего нет""")
-    elif code == 1:
-        return print(f"""Мы его нашли. Место {pos}""")
-    elif code == 2:
-        return print(f"""Тебя собаку забанили на {i} странице""")
-    elif code == 3:
-        return print(f"Какая-то ошибка с запросом")
-
-search_target_app()
+search_target_app(keys)
