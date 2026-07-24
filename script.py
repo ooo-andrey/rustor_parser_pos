@@ -10,16 +10,13 @@ import bd_requests
 # Сколько максимально мест проверяем
 max_pos = 180 
 
-# Какое приложение ищем 
-app_target = "com.autoverse.floorislava"
-
-
 # Создаем бд если её нет
 bd = bd_requests.DATABASE()
 bd.open()
 bd.create_tables()
 bd.close()
 
+# Делаем запрос к сайту Рустор возвращаем всю страницу html
 def make_request(page_num, key):
 
     headers = {
@@ -36,6 +33,7 @@ def make_request(page_num, key):
 
     return response
 
+# Ищем на странице html все ссылки на приложения и возвращаем список вех приложений на странице
 def receive_aps_list(r):
 
     soup = BeautifulSoup(r.text, 'html.parser')
@@ -48,13 +46,21 @@ def receive_aps_list(r):
 
     return app_names
 
+""" 
+Ищем нужное приложение на каждой странице по каждому ключу и возвращаем ответ:
 
+0 = Приложение не найдено
+1 - Приложение найдено + возвращает на каком месте
+2 - По запросу на сайт возвращается страница-заглушка (на на время забанили)
 
+"""
 def search_target_app(app_title):
 
     bd.open()
     n = math.ceil(max_pos / 36) # Сколько страниц нужно проверить
-    keys = bd.get_keys(bd.get_app_name(app_title)[0])
+    app_name = bd.get_app_name(app_title)[0]
+    keys = bd.get_keys(app_name)
+    app_id = bd.get_app_id(app_name)
     
     for key in keys:
 
@@ -83,12 +89,12 @@ def search_target_app(app_title):
 
         if code == 0:
             print(f"""Из {max_pos} приложений твоего по ключу -{key}- нет, лошок""")
+            bd.add_stats(app_id, bd.get_key_id(key, app_id), 1, "Null", datetime.now())
         elif code == 1:
-            print(f"""По ключу -{key}- место {pos}, страница {i}""")
+            print(f"""По ключу -{key}- у приложения -{app_title}- место {pos}, страница {i}""")
+            bd.add_stats(app_id, bd.get_key_id(key, app_id), 1, pos, datetime.now())
         elif code == 2:
             print(f"""Тебя собаку забанили на ключе -{key}- {i} странице""")
-        elif code == 3:
-            print(f"Какая-то ошибка с запросом на ключе {key}")
 
     bd.close()
 

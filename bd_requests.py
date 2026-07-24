@@ -8,6 +8,7 @@ class DATABASE:
     password = "admin123"
     db_name = "testdb"
 
+    # Открыть соединение с БД
     def open(self):
 
         try:
@@ -25,8 +26,17 @@ class DATABASE:
         except:
             return None
 
+    # Закрыть соединение с БД
+    def close(self):
 
+        try:
+            self.cursor.close()
+            self.connection.close()
+            print("Close")
+        except:
+            return None
 
+    # Создать все нужные таблицы
     def create_tables(self):
 
         try:
@@ -37,6 +47,11 @@ class DATABASE:
                     app_title VARCHAR(60) NOT NULL,
                     app_name VARCHAR(60) NOT NULL UNIQUE
                 );
+
+                CREATE TABLE IF NOT EXISTS Markets(
+                    id serial PRIMARY KEY,
+                    market_name VARCHAR(60) NOT NULL UNIQUE
+                );
                 
                 CREATE TABLE IF NOT EXISTS Keys(
                     id serial PRIMARY KEY,
@@ -45,20 +60,21 @@ class DATABASE:
                     UNIQUE (key, app_id)
                 );
 
-                CREATE TABLE IF NOT EXISTS RuStore(
+                CREATE TABLE IF NOT EXISTS Stats(
                     id serial PRIMARY KEY,
                     app_id INT NOT NULL,
                     key_id INT NOT NULL,
-                    pos INT,
+                    market_id INT NOT Null,
+                    position INT,
                     date DATE NOT NULL
                 );
                 """
             )
         except:
-            return print("sosi")
+            return False
 
-
-    def add_in_apps(self, app_title, app_name):
+    # Добавить запись в таблицу Apps
+    def add_apps(self, app_title, app_name):
 
         try:
             self.cursor.execute(
@@ -71,7 +87,22 @@ class DATABASE:
         except:
             return False
 
-    def add_in_keys(self, key, app_name):
+    # Добавить запись в таблицу Markets
+    def add_markets(self, market_name):
+
+        try:
+            self.cursor.execute(
+                f"""
+                INSERT INTO Markets(market_name)
+                VALUES('{market_name}')
+                """
+            )
+            return True
+        except:
+            return False
+
+    # Добавить запись в таблицу Keys
+    def add_keys(self, key, app_name):
 
         try:
             self.cursor.execute(
@@ -83,20 +114,22 @@ class DATABASE:
             )
             return True
         except:
-            return print("sosi 123")
-
-    def add_in_rustore(self, app_name, key, pos, date):
+            return False
+        
+    # Добавить запись в таблицу Stats
+    def add_stats(self, app_id, key_id, market_id, pos, date):
 
         try:
             self.cursor.execute(
                 f"""
-                INSERT INTO RuStore(app_name, key, pos, date)
-                VALUES('{app_name}', '{key}', {pos}, '{date}');
+                INSERT INTO Stats(app_id, key_id, market_id, position, date)
+                VALUES({app_id}, '{key_id}', {market_id}, {pos}, '{date}');
                 """
             )
         except:
-            return print("sosi") 
+            return print("sosite")
 
+    # Получить все ключевые слова по определенному приложению
     def get_keys(self, app_name):
 
         try:
@@ -110,8 +143,9 @@ class DATABASE:
 
             return [key[0] for key in self.cursor.fetchall()]
         except:
-            return None
+            return False
 
+    # Получить название приложения
     def get_app_name(self, app_title):
 
         try:
@@ -125,12 +159,36 @@ class DATABASE:
 
             return [key[0] for key in self.cursor.fetchall()]
         except:
-            return None        
-    def close(self):
+            return False 
+
+    # Получить id приложения
+    def get_app_id(self, app_name):
 
         try:
-            self.cursor.close()
-            self.connection.close()
-            print("Close")
+            self.cursor.execute(
+                f"""
+                SELECT id
+                FROM Apps
+                WHERE app_name = '{app_name}';
+                """
+            )        
+
+            return [key[0] for key in self.cursor.fetchall()][0]
         except:
-            return None
+            return False   
+
+    # Получить id ключа
+    def get_key_id(self, key, app_id):
+
+        try:
+            self.cursor.execute(
+                f"""
+                SELECT id
+                FROM Keys
+                WHERE key = '{key}' AND app_id = {app_id};
+                """
+            )        
+
+            return [key[0] for key in self.cursor.fetchall()][0]
+        except:
+            return False   
