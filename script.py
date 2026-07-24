@@ -3,6 +3,9 @@ import time
 import random
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+
+import bd_requests 
 
 # Сколько максимально мест проверяем
 max_pos = 180 
@@ -17,6 +20,7 @@ keys = [
 # Какое приложение ищем 
 app_target = "com.autoverse.floorislava"
 
+bd = bd_requests.DATABASE()
 
 def make_request(page_num, key):
 
@@ -80,6 +84,8 @@ def search_target_app(keys):
             print(f"""Из {max_pos} приложений твоего по ключу -{key}- нет, лошок""")
         elif code == 1:
             print(f"""По ключу -{key}- место {pos}, страница {i}""")
+            bd.open()
+            bd.add_key_pos(app_target, key, pos, datetime.now().date())
         elif code == 2:
             print(f"""Тебя собаку забанили на ключе -{key}- {i} странице""")
         elif code == 3:
