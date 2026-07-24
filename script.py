@@ -10,17 +10,15 @@ import bd_requests
 # Сколько максимально мест проверяем
 max_pos = 180 
 
-# По каким ключам мы ищем
-keys = [
-    "Мечники",
-    "Стрелялки",
-    "Пол это лава"
-]
-
 # Какое приложение ищем 
 app_target = "com.autoverse.floorislava"
 
+
+# Создаем бд если её нет
 bd = bd_requests.DATABASE()
+bd.open()
+bd.create_tables()
+bd.close()
 
 def make_request(page_num, key):
 
@@ -52,10 +50,12 @@ def receive_aps_list(r):
 
 
 
-def search_target_app(keys):
+def search_target_app(app_title):
 
+    bd.open()
     n = math.ceil(max_pos / 36) # Сколько страниц нужно проверить
-
+    keys = bd.get_keys(bd.get_app_name(app_title)[0])
+    
     for key in keys:
 
         code = 0
@@ -73,24 +73,24 @@ def search_target_app(keys):
                 code = 2
                 break
 
-            if app_target in app_names:
+            if bd.get_app_name(app_title)[0] in app_names:
                 code = 1
-                pos = app_names.index(app_target) + 1 + (i-1)*36
+                pos = app_names.index(bd.get_app_name(app_title)[0]) + 1 + (i-1)*36
                 break
 
-            time.sleep(random.randint(10,17)) # Случайная задержка между запросами
+            time.sleep(random.randint(1,3)) # Случайная задержка между запросами
+
 
         if code == 0:
             print(f"""Из {max_pos} приложений твоего по ключу -{key}- нет, лошок""")
         elif code == 1:
             print(f"""По ключу -{key}- место {pos}, страница {i}""")
-            bd.open()
-            bd.add_key_pos(app_target, key, pos, datetime.now().date())
         elif code == 2:
             print(f"""Тебя собаку забанили на ключе -{key}- {i} странице""")
         elif code == 3:
             print(f"Какая-то ошибка с запросом на ключе {key}")
 
+    bd.close()
 
 
-search_target_app(keys)
+search_target_app("Рыцарь Подземелий: Пол это Лава")
