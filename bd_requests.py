@@ -1,19 +1,20 @@
 import psycopg2
 
 
-class DATABASE:
+class data_base:
 
-    host = "192.168.1.156"
-    user = "admin"
-    password = "admin123"
-    db_name = "testdb"
+    def __init__(self, url, user, password, db_name):
+        self.url =url
+        self.user = user
+        self.password = password
+        self.db_name = db_name
 
     # Открыть соединение с БД
     def open(self):
 
         try:
             connection = psycopg2.connect(
-                host=self.host,
+                host=self.url,
                 user=self.user,
                 password=self.password,
                 database=self.db_name

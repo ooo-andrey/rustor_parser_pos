@@ -5,16 +5,10 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-import bd_requests 
+from config import bd 
 
 # Сколько максимально мест проверяем
 max_pos = 180 
-
-# Создаем бд если её нет
-bd = bd_requests.DATABASE()
-bd.open()
-bd.create_tables()
-bd.close()
 
 # Делаем запрос к сайту Рустор возвращаем всю страницу html
 def make_request(page_num, key):
