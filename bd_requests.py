@@ -1,7 +1,7 @@
 import psycopg2
 
 
-class data_base:
+class data_base_connector:
 
     def __init__(self, url, user, password, db_name):
         self.url =url
