@@ -11,7 +11,7 @@ from config import bd
 max_pos = 180 
 
 # Делаем запрос к сайту Рустор возвращаем всю страницу html
-def make_request(page_num, key):
+def ger_rustore_page(page_num, key):
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
@@ -62,7 +62,7 @@ def search_target_app(app_title):
         pos = 0
 
         for i in range(1, n+1): 
-            response = make_request(i, key)
+            response = ger_rustore_page(i, key)
             app_names = receive_aps_list(response)
 
             if app_names == None:
