@@ -5,13 +5,22 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from config import bd 
+from bd_requests import data_base_connector
+import config
+import sql_queries
+
+# Создаем обьект БД
+bd = data_base_connector(
+    url= config.url, 
+    db_name= config.db_name, 
+    user= config.user, 
+    password= config.password)
 
 # Сколько максимально мест проверяем
-max_pos = 180 
+max_pos = 180
 
 # Делаем запрос к сайту Рустор возвращаем всю страницу html
-def make_request(page_num, key):
+def get_rustore_page(page_num, key):
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36'
@@ -50,11 +59,13 @@ def receive_aps_list(r):
 """
 def search_target_app(app_title):
 
-    bd.open()
+    if not bd.open():
+        return print("Ошибка в подключении к бд")
+    
     n = math.ceil(max_pos / 36) # Сколько страниц нужно проверить
-    app_name = bd.get_app_name(app_title)[0]
-    keys = bd.get_keys(app_name)
-    app_id = bd.get_app_id(app_name)
+    app_name = bd.make_request(sql_queries.get_app_name(app_title))[0][0]
+    keys = [key[0] for key in bd.make_request(sql_queries.get_keys(app_name))]
+    app_id = bd.make_request(sql_queries.get_app_id(app_name))
     
     for key in keys:
 
@@ -62,7 +73,7 @@ def search_target_app(app_title):
         pos = 0
 
         for i in range(1, n+1): 
-            response = make_request(i, key)
+            response = get_rustore_page(i, key)
             app_names = receive_aps_list(response)
 
             if app_names == None:
@@ -73,9 +84,9 @@ def search_target_app(app_title):
                 code = 2
                 break
 
-            if bd.get_app_name(app_title)[0] in app_names:
+            if app_name in app_names:
                 code = 1
-                pos = app_names.index(bd.get_app_name(app_title)[0]) + 1 + (i-1)*36
+                pos = app_names.index(app_name) + 1 + (i-1)*36
                 break
 
             time.sleep(random.randint(1,3)) # Случайная задержка между запросами
@@ -83,12 +94,13 @@ def search_target_app(app_title):
 
         if code == 0:
             print(f"""Из {max_pos} приложений твоего по ключу -{key}- нет, лошок""")
-            bd.add_stats(app_id, bd.get_key_id(key, app_id), 1, "Null", datetime.now())
+            bd.make_request(sql_queries.add_stats(app_id, bd.make_request(sql_queries.get_key_id(key, app_id)), 1, "Null", datetime.now()))
         elif code == 1:
             print(f"""По ключу -{key}- у приложения -{app_title}- место {pos}, страница {i}""")
-            bd.add_stats(app_id, bd.get_key_id(key, app_id), 1, pos, datetime.now())
+            # bd.add_stats(app_id, bd.get_key_id(key, app_id), 1, pos, datetime.now())
+            bd.make_request(sql_queries.add_stats(app_id, bd.make_request(sql_queries.get_key_id(key, app_id)), 1, pos, datetime.now()))            
         elif code == 2:
-            print(f"""Тебя собаку забанили на ключе -{key}- {i} странице""")
+            print(f"""Тебя собаку забанили, подожди 10 минут и попробуй снова""")
 
     bd.close()
 
